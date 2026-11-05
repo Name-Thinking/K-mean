@@ -18,31 +18,31 @@ GLASSES = {'Supachok', 'Manow'}
 BANGS   = {'Ann', 'Saimai', 'DD', 'VA', 'North', 'Jang', 'Mart'}
 
 PERSON_INFO = {
-    # Group 1: ชาย-เปิดหน้าผาก (4 คน)
-    'Pae':      {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: ชาย-เปิดหน้าผาก',       'group_en': 'G1: Men-Forehead'},
-    'Endu':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: ชาย-เปิดหน้าผาก',       'group_en': 'G1: Men-Forehead'},
-    'Champ':    {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: ชาย-เปิดหน้าผาก',       'group_en': 'G1: Men-Forehead'},
-    'Ball':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: ชาย-เปิดหน้าผาก',       'group_en': 'G1: Men-Forehead'},
+    # Group 1: สายงานวิศวกรรมระบบและโครงสร้างพื้นฐาน (Backend & Infrastructure Engineer) (4 คน)
+    'Pae':      {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: วิศวกรระบบ (Backend)',       'group_en': 'G1: Backend Eng'},
+    'Endu':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: วิศวกรระบบ (Backend)',       'group_en': 'G1: Backend Eng'},
+    'Champ':    {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: วิศวกรระบบ (Backend)',       'group_en': 'G1: Backend Eng'},
+    'Ball':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 1: วิศวกรระบบ (Backend)',       'group_en': 'G1: Backend Eng'},
 
-    # Group 2: หญิง-เปิดหน้าผาก (5 คน)
-    'Memi':     {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: หญิง-เปิดหน้าผาก',      'group_en': 'G2: Women-Forehead'},
-    'Pan':      {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: หญิง-เปิดหน้าผาก',      'group_en': 'G2: Women-Forehead'},
-    'First':    {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: หญิง-เปิดหน้าผาก',      'group_en': 'G2: Women-Forehead'},
-    'Nod':      {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: หญิง-เปิดหน้าผาก',      'group_en': 'G2: Women-Forehead'},
-    'Earn':     {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: หญิง-เปิดหน้าผาก',      'group_en': 'G2: Women-Forehead'},
+    # Group 2: สายงานวิทยาศาสตร์ข้อมูลและการวิเคราะห์ (Data Science & Analytics) (5 คน)
+    'Memi':     {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: วิทยาศาสตร์ข้อมูล (Data Science)', 'group_en': 'G2: Data Science'},
+    'Pan':      {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: วิทยาศาสตร์ข้อมูล (Data Science)', 'group_en': 'G2: Data Science'},
+    'First':    {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: วิทยาศาสตร์ข้อมูล (Data Science)', 'group_en': 'G2: Data Science'},
+    'Nod':      {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: วิทยาศาสตร์ข้อมูล (Data Science)', 'group_en': 'G2: Data Science'},
+    'Earn':     {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 2: วิทยาศาสตร์ข้อมูล (Data Science)', 'group_en': 'G2: Data Science'},
 
-    # Group 3: รวมชาย+หญิง ผมหน้าม้า (7 คน)
-    'VA':       {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: รวมชาย+หญิง ผมหน้าม้า', 'group_en': 'G3: Bangs'},
-    'North':    {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: รวมชาย+หญิง ผมหน้าม้า', 'group_en': 'G3: Bangs'},
-    'Jang':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: รวมชาย+หญิง ผมหน้าม้า', 'group_en': 'G3: Bangs'},
-    'Mart':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: รวมชาย+หญิง ผมหน้าม้า', 'group_en': 'G3: Bangs'},
-    'Ann':      {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 3: รวมชาย+หญิง ผมหน้าม้า', 'group_en': 'G3: Bangs'},
-    'Saimai':   {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 3: รวมชาย+หญิง ผมหน้าม้า', 'group_en': 'G3: Bangs'},
-    'DD':       {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 3: รวมชาย+หญิง ผมหน้าม้า', 'group_en': 'G3: Bangs'},
+    # Group 3: สายงานออกแบบผลิตภัณฑ์และพัฒนาหน้าบ้าน (Product & UI/UX) (7 คน)
+    'VA':       {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',   'group_en': 'G3: Product UI/UX'},
+    'North':    {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',   'group_en': 'G3: Product UI/UX'},
+    'Jang':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',   'group_en': 'G3: Product UI/UX'},
+    'Mart':     {'gender': 'ชาย',  'glasses': False, 'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',   'group_en': 'G3: Product UI/UX'},
+    'Ann':      {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',   'group_en': 'G3: Product UI/UX'},
+    'Saimai':   {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',   'group_en': 'G3: Product UI/UX'},
+    'DD':       {'gender': 'หญิง', 'glasses': False, 'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',   'group_en': 'G3: Product UI/UX'},
 
-    # Group 4: บุคคลใส่แว่นตา (2 คน)
-    'Supachok': {'gender': 'ชาย',  'glasses': True,  'group_th': 'กลุ่ม 4: บุคคลใส่แว่นตา',         'group_en': 'G4: Glasses'},
-    'Manow':    {'gender': 'หญิง', 'glasses': True,  'group_th': 'กลุ่ม 4: บุคคลใส่แว่นตา',         'group_en': 'G4: Glasses'},
+    # Group 4: สายงานสถาปัตยกรรมระบบและที่ปรึกษาเทคโนโลยี (System Architect) (2 คน)
+    'Supachok': {'gender': 'ชาย',  'glasses': True,  'group_th': 'กลุ่ม 4: สถาปนิกเทคโนโลยี (Architect)', 'group_en': 'G4: System Architect'},
+    'Manow':    {'gender': 'หญิง', 'glasses': True,  'group_th': 'กลุ่ม 4: สถาปนิกเทคโนโลยี (Architect)', 'group_en': 'G4: System Architect'},
 }
 
 # ---- Helper: read image with Thai/Unicode path ----
@@ -103,10 +103,10 @@ X_std[X_std == 0] = 1
 train_norm = (train_feats - X_mean) / X_std
 
 print(f'Ready! {len(names)} people loaded.')
-print("  Group 1: ชาย-เปิดหน้าผาก (4 คน): ['Pae', 'Endu', 'Champ', 'Ball']")
-print("  Group 2: หญิง-เปิดหน้าผาก (5 คน): ['Memi', 'Pan', 'First', 'Nod', 'Earn']")
-print("  Group 3: รวมชาย+หญิง ผมหน้าม้า (7 คน): ['VA', 'North', 'Jang', 'Mart', 'Ann', 'Saimai', 'DD']")
-print("  Group 4: บุคคลใส่แว่นตา (2 คน): ['Supachok [M]', 'Manow [F]']")
+print("  Group 1: วิศวกรระบบ Backend (4 คน): ['Pae', 'Endu', 'Champ', 'Ball']")
+print("  Group 2: วิทยาศาสตร์ข้อมูล Data Science (5 คน): ['Memi', 'Pan', 'First', 'Nod', 'Earn']")
+print("  Group 3: ออกแบบผลิตภัณฑ์ UI/UX (7 คน): ['VA', 'North', 'Jang', 'Mart', 'Ann', 'Saimai', 'DD']")
+print("  Group 4: สถาปนิกเทคโนโลยี Architect (2 คน): ['Supachok [M]', 'Manow [F]']")
 print('Press  Q  to quit.')
 
 # ================================================================
