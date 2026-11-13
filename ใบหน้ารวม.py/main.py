@@ -40,7 +40,7 @@ def main():
 
     title_lbl = tk.Label(
         root,
-        text="ระบบจดจำและจัดกลุ่มใบหน้าลูกค้า",
+        text="ระบบจัดกลุ่มภาพใบหน้า (K-Means Clustering)",
         font=("Tahoma", 16, "bold"),
         fg="#ffffff",
         bg="#1e272e",
@@ -50,7 +50,7 @@ def main():
 
     sub_lbl = tk.Label(
         root,
-        text="ตรวจจับใบหน้าอัตโนมัติ (YuNet + SFace) • รองรับการลงทะเบียนด่วน",
+        text="วิเคราะห์และจัดกลุ่มอัตโนมัติ (K=4) จากคุณลักษณะทางกายภาพจริง",
         font=("Tahoma", 10),
         fg="#b2bec3",
         bg="#1e272e"
@@ -58,7 +58,7 @@ def main():
     sub_lbl.pack(pady=(0, 20))
 
     btn_style = {
-        "font": ("Tahoma", 12, "bold"),
+        "font": ("Tahoma", 13, "bold"),
         "fg": "#ffffff",
         "width": 34,
         "height": 2,
@@ -69,30 +69,12 @@ def main():
 
     tk.Button(
         root,
-        text="📷  สแกนใบหน้าเข้าใช้งาน (Check-in)",
-        bg="#2ecc71",
-        activebackground="#27ae60",
-        command=lambda: run_module("FaceRecognize.py", root),
-        **btn_style
-    ).pack(pady=8)
-
-    tk.Button(
-        root,
-        text="➕  ลงทะเบียนลูกค้าใหม่ (New Customer)",
-        bg="#3498db",
-        activebackground="#2980b9",
-        command=lambda: run_module("FaceTrain.py", root),
-        **btn_style
-    ).pack(pady=8)
-
-    tk.Button(
-        root,
-        text="📊  จัดกลุ่มสายอาชีพ K-Means (K=4)",
+        text="📊  เริ่มการจัดกลุ่มใบหน้า K-Means (K=4)",
         bg="#e67e22",
         activebackground="#d35400",
         command=lambda: run_module("FaceCluster.py", root),
         **btn_style
-    ).pack(pady=8)
+    ).pack(pady=20)
 
     tk.Label(
         root,

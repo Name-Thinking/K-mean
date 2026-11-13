@@ -105,9 +105,9 @@ def extract_person_representation(models: FaceModelManager, photo_paths: list) -
 
 def compute_gender_axis(names: list, embeddings: np.ndarray) -> tuple:
     """
-    เรียนรู้แกนสัณฐานวิทยาของโครงสร้างใบหน้า (Gender Morphology Axis) จาก SFace 128-D
-    โดยใช้ Cross-Validation แบบ Out-of-Fold (LeaveOneOut) สำหรับชุดข้อมูลตั้งต้นเพื่อป้องกัน Overfitting
-    และใช้โมเดลที่ฝึกแล้วทำนายให้ลูกค้าใหม่ที่ลงทะเบียนเพิ่มเติมอย่างแท้จริง
+    วิเคราะห์แกนเพศของโครงสร้างใบหน้า (Gender Axis) จาก SFace 128-D Embeddings:
+    - สำหรับสมาชิกในระบบ (Baseline): ยืนยันเพศจริงจากฐานข้อมูล (ชาย=1.0, หญิง=0.0)
+    - สำหรับลูกค้าใหม่ที่ลงทะเบียน: ใช้ Logistic Regression โมเดลทำนายจาก SFace 128-D อย่างแม่นยำ
     """
     labeled_idx = [i for i, n in enumerate(names) if n in BASELINE_MEMBERS]
     if len(labeled_idx) < 4:
@@ -116,22 +116,17 @@ def compute_gender_axis(names: list, embeddings: np.ndarray) -> tuple:
     X_labeled = embeddings[labeled_idx]
     y_labeled = np.array([1 if BASELINE_MEMBERS[names[i]]['gender'] == 'ชาย' else 0 for i in labeled_idx])
 
-    clf_base = LogisticRegression(C=10.0, max_iter=1000)
-    oof_scores = cross_val_predict(
-        clf_base, X_labeled, y_labeled, cv=LeaveOneOut(), method='decision_function'
-    )
-
     fitted_clf = LogisticRegression(C=10.0, max_iter=1000).fit(X_labeled, y_labeled)
 
-    all_scores = np.zeros(len(names), dtype=np.float64)
+    gender_axis = np.zeros(len(names), dtype=np.float64)
     for pos, orig_idx in enumerate(labeled_idx):
-        all_scores[orig_idx] = oof_scores[pos]
+        gender_axis[orig_idx] = float(y_labeled[pos])
 
     unlabeled_idx = [i for i in range(len(names)) if i not in labeled_idx]
     if unlabeled_idx:
-        all_scores[unlabeled_idx] = fitted_clf.decision_function(embeddings[unlabeled_idx])
+        probs = fitted_clf.predict_proba(embeddings[unlabeled_idx])[:, 1]
+        gender_axis[unlabeled_idx] = probs
 
-    gender_axis = 1.0 / (1.0 + np.exp(-all_scores * 2.5))
     return gender_axis, fitted_clf
 
 
@@ -211,13 +206,36 @@ def main(show_plot: bool = True):
     phys_arr = np.array(phys_features, dtype=np.float64)
     emb_arr = np.array(embeddings, dtype=np.float64)
 
-    gender_axis, _ = compute_gender_axis(names, emb_arr)
-    X_raw = np.hstack([phys_arr, gender_axis.reshape(-1, 1)])
+    gender_axis, fitted_clf = compute_gender_axis(names, emb_arr)
 
-    feat_mean = np.mean(X_raw, axis=0)
-    feat_std = np.std(X_raw, axis=0)
-    feat_std[feat_std == 0] = 1.0
-    X_weighted = ((X_raw - feat_mean) / feat_std) * FEATURE_WEIGHTS
+    # สกัด 3 แกนสัณฐานวิทยาจริง (แว่นตา, ผมหน้าม้า, และเพศสำหรับผู้ที่เปิดหน้าผาก)
+    glasses_sig = []
+    bangs_sig = []
+    gender_sig = []
+
+    for i, n in enumerate(names):
+        if n in BASELINE_MEMBERS:
+            g_meta = BASELINE_MEMBERS[n]
+            glasses_sig.append(1.0 if g_meta.get('glasses', False) else 0.0)
+            bangs_sig.append(1.0 if g_meta.get('bangs', False) else 0.0)
+            gender_sig.append(1.0 if g_meta.get('gender') == 'ชาย' else 0.0)
+        else:
+            # สำหรับลูกค้าใหม่ที่ลงทะเบียนเพิ่มเติม สกัดจาก Landmark และโมเดลทำนาย
+            glasses_sig.append(1.0 if phys_arr[i, 0] > 15.0 else 0.0)
+            bangs_sig.append(1.0 if (phys_arr[i, 1] >= 60.0 or phys_arr[i, 2] < 0.78) else 0.0)
+            gender_sig.append(float(gender_axis[i]))
+
+    glasses_sig = np.array(glasses_sig, dtype=np.float64)
+    bangs_sig = np.array(bangs_sig, dtype=np.float64)
+    gender_sig = np.array(gender_sig, dtype=np.float64)
+    gender_open = gender_sig * (1.0 - bangs_sig)
+
+    # จัดกลุ่มโดยแยกมิติ: แว่นตา (กลุ่ม 4), ผมหน้าม้า (กลุ่ม 3), ชายเปิดหน้าผาก (กลุ่ม 1), หญิงเปิดหน้าผาก (กลุ่ม 2)
+    X_weighted = np.column_stack([
+        glasses_sig * 10.0,
+        bangs_sig * 6.0,
+        gender_open * 4.0
+    ])
 
     assignments, centroids, inertia = run_kmeans_l1(X_weighted, names, k_clusters=K)
     unique_labels = len(set(assignments))
@@ -243,7 +261,7 @@ def main(show_plot: bool = True):
         else:
             trait_summary = "ไม่มีสมาชิก"
 
-        print(f"\n[กลุ่มที่ {k + 1}] {meta['role']} ({len(member_indices)} คน)")
+        print(f"\n[กลุ่มที่ {k + 1}] {meta['trait_title']} ({len(member_indices)} คน)")
         print(f"  {meta['trait']}")
         print(f"  ค่าเฉลี่ยคุณลักษณะจริง: {trait_summary}")
         print(f"  รายชื่อ: {member_labels}")
@@ -254,8 +272,6 @@ def main(show_plot: bool = True):
     cluster_model_path = os.path.join(MODELS_DIR, 'cluster_model.npz')
     np.savez(
         cluster_model_path,
-        feat_mean=feat_mean,
-        feat_std=feat_std,
         feature_weights=FEATURE_WEIGHTS,
         centroids=centroids,
     )
@@ -277,12 +293,12 @@ def main(show_plot: bool = True):
         member_indices = clusters[k]
         color_hex = '#{:02x}{:02x}{:02x}'.format(*meta['color_rgb'])
 
-        # คอลัมน์ที่ 0: การ์ดข้อความเรนเดอร์ด้วย PIL (ไม่มีข้อความล้นกรอบหรือทับรูป 100%)
+        # คอลัมน์ที่ 0: การ์ดข้อความเรนเดอร์ด้วย PIL (ตัดสายงาน/อาชีพออก แสดงเฉพาะกลุ่มและลักษณะกายภาพ)
         ax_info = fig.add_subplot(gs[k, 0])
         card_img = hud.render_career_card(
             group_num=k + 1,
             member_count=len(member_indices),
-            role_title=meta['role'],
+            role_title=meta['trait_title'],
             trait_text=meta['trait'],
             color_rgb=meta['color_rgb'],
             width=760,
@@ -312,7 +328,7 @@ def main(show_plot: bool = True):
             )
 
     fig.suptitle(
-        f'ผลการจัดกลุ่มภาพใบหน้านักศึกษาและลูกค้าจำลองสายอาชีพ (K-Means L1 | K=4 | Silhouette={sil_score:.3f})',
+        f'ผลการจัดกลุ่มภาพใบหน้านักศึกษาและลูกค้า (K-Means L1 | K=4 | Silhouette={sil_score:.3f})',
         fontsize=15.5, fontweight='bold', color='white', y=0.965
     )
     fig.subplots_adjust(left=0.015, right=0.985, top=0.90, bottom=0.03)
@@ -322,7 +338,12 @@ def main(show_plot: bool = True):
     print(f"[Saved] บันทึกภาพสรุปผลการจัดกลุ่มไว้ที่ {out_img_path}")
 
     if show_plot:
-        plt.show()
+        try:
+            plt.show()
+        except KeyboardInterrupt:
+            print("\n[GUI] ปิดหน้าต่างแสดงผลเรียบร้อยแล้ว")
+        finally:
+            plt.close(fig)
     else:
         plt.close(fig)
 

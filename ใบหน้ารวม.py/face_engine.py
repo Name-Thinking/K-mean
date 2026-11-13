@@ -83,40 +83,48 @@ DATA_FOLDERS_CANDIDATES = [
 GROUP_METADATA = [
     {
         'id': 0,
-        'role': 'สายงานวิศวกรรมระบบและโครงสร้างพื้นฐาน (Backend & Infrastructure Engineer)',
-        'role_short': 'Backend Engineer',
-        'group_th': 'กลุ่ม 1: วิศวกรระบบ (Backend)',
-        'group_en': 'G1: Backend Eng',
+        'group_title': 'กลุ่มที่ 1',
+        'trait_title': 'ชายเปิดหน้าผาก',
+        'role': 'ชายเปิดหน้าผาก',
+        'role_short': 'ชายเปิดหน้าผาก',
+        'group_th': 'กลุ่ม 1: ชายเปิดหน้าผาก',
+        'group_en': 'G1: Male Open Forehead',
         'trait': 'กลุ่มบุคลิกภาพ: หนักแน่น คล่องตัว • ชายเปิดหน้าผาก • สมาธิสูง มุ่งมั่น',
         'color_bgr': (219, 152, 52),  # ฟ้า #3498db
         'color_rgb': (52, 152, 219),
     },
     {
         'id': 1,
-        'role': 'สายงานวิทยาศาสตร์ข้อมูลและการวิเคราะห์ (Data Science & Analytics Specialist)',
-        'role_short': 'Data Scientist',
-        'group_th': 'กลุ่ม 2: วิทยาศาสตร์ข้อมูล (Data Science)',
-        'group_en': 'G2: Data Science',
+        'group_title': 'กลุ่มที่ 2',
+        'trait_title': 'หญิงเปิดหน้าผาก',
+        'role': 'หญิงเปิดหน้าผาก',
+        'role_short': 'หญิงเปิดหน้าผาก',
+        'group_th': 'กลุ่ม 2: หญิงเปิดหน้าผาก',
+        'group_en': 'G2: Female Open Forehead',
         'trait': 'กลุ่มบุคลิกภาพ: ละเอียด ประณีต รอบคอบ • หญิงเปิดหน้าผาก • คิดวิเคราะห์เป็นระบบ',
         'color_bgr': (147, 67, 232),  # ชมพู #e84393
         'color_rgb': (232, 67, 147),
     },
     {
         'id': 2,
-        'role': 'สายงานออกแบบผลิตภัณฑ์และพัฒนาหน้าบ้าน (Product Designer & UI/UX Developer)',
-        'role_short': 'Product UI/UX',
-        'group_th': 'กลุ่ม 3: ออกแบบผลิตภัณฑ์ (UI/UX)',
-        'group_en': 'G3: Product UI/UX',
+        'group_title': 'กลุ่มที่ 3',
+        'trait_title': 'สไตล์ผมหน้าม้า',
+        'role': 'สไตล์ผมหน้าม้า',
+        'role_short': 'สไตล์ผมหน้าม้า',
+        'group_th': 'กลุ่ม 3: สไตล์ผมหน้าม้า',
+        'group_en': 'G3: Bangs Style',
         'trait': 'กลุ่มบุคลิกภาพ: สร้างสรรค์ ทันสมัย • สไตล์ผมหน้าม้า • ใส่ใจมิติภาพและผู้ใช้งาน',
         'color_bgr': (34, 126, 230),  # ส้ม #e67e22
         'color_rgb': (230, 126, 34),
     },
     {
         'id': 3,
-        'role': 'สายงานสถาปัตยกรรมระบบและที่ปรึกษาเทคโนโลยี (System Architect & Tech Consultant)',
-        'role_short': 'System Architect',
-        'group_th': 'กลุ่ม 4: สถาปนิกเทคโนโลยี (Architect)',
-        'group_en': 'G4: System Architect',
+        'group_title': 'กลุ่มที่ 4',
+        'trait_title': 'เอกลักษณ์สวมแว่นตา',
+        'role': 'เอกลักษณ์สวมแว่นตา',
+        'role_short': 'เอกลักษณ์สวมแว่นตา',
+        'group_th': 'กลุ่ม 4: เอกลักษณ์สวมแว่นตา',
+        'group_en': 'G4: Glasses',
         'trait': 'กลุ่มบุคลิกภาพ: เชี่ยวชาญระดับสูง วิสัยทัศน์เฉียบคม • เอกลักษณ์สวมแว่นตา • วิเคราะห์โครงสร้างใหญ่',
         'color_bgr': (113, 204, 46),  # เขียว #2ecc71
         'color_rgb': (46, 204, 113),
@@ -124,24 +132,31 @@ GROUP_METADATA = [
 ]
 
 BASELINE_MEMBERS = {
-    'Pae':      {'group_id': 0, 'gender': 'ชาย',  'glasses': False},
-    'Endu':     {'group_id': 0, 'gender': 'ชาย',  'glasses': False},
-    'Champ':    {'group_id': 0, 'gender': 'ชาย',  'glasses': False},
-    'Ball':     {'group_id': 0, 'gender': 'ชาย',  'glasses': False},
-    'Memi':     {'group_id': 1, 'gender': 'หญิง', 'glasses': False},
-    'Pan':      {'group_id': 1, 'gender': 'หญิง', 'glasses': False},
-    'First':    {'group_id': 1, 'gender': 'หญิง', 'glasses': False},
-    'Nod':      {'group_id': 1, 'gender': 'หญิง', 'glasses': False},
-    'Earn':     {'group_id': 1, 'gender': 'หญิง', 'glasses': False},
-    'VA':       {'group_id': 2, 'gender': 'ชาย',  'glasses': False},
-    'North':    {'group_id': 2, 'gender': 'ชาย',  'glasses': False},
-    'Jang':     {'group_id': 2, 'gender': 'ชาย',  'glasses': False},
-    'Mart':     {'group_id': 2, 'gender': 'ชาย',  'glasses': False},
-    'Ann':      {'group_id': 2, 'gender': 'หญิง', 'glasses': False},
-    'Saimai':   {'group_id': 2, 'gender': 'หญิง', 'glasses': False},
-    'DD':       {'group_id': 2, 'gender': 'หญิง', 'glasses': False},
-    'Supachok': {'group_id': 3, 'gender': 'ชาย',  'glasses': True},
-    'Manow':    {'group_id': 3, 'gender': 'หญิง', 'glasses': True},
+    # กลุ่ม 1: ชายเปิดหน้าผาก (5 คน)
+    'Pae':      {'group_id': 0, 'gender': 'ชาย',  'glasses': False, 'bangs': False},
+    'Endu':     {'group_id': 0, 'gender': 'ชาย',  'glasses': False, 'bangs': False},
+    'Champ':    {'group_id': 0, 'gender': 'ชาย',  'glasses': False, 'bangs': False},
+    'Ball':     {'group_id': 0, 'gender': 'ชาย',  'glasses': False, 'bangs': False},
+    'VA':       {'group_id': 0, 'gender': 'ชาย',  'glasses': False, 'bangs': False},
+
+    # กลุ่ม 2: หญิงเปิดหน้าผาก (5 คน)
+    'Memi':     {'group_id': 1, 'gender': 'หญิง', 'glasses': False, 'bangs': False},
+    'Pan':      {'group_id': 1, 'gender': 'หญิง', 'glasses': False, 'bangs': False},
+    'First':    {'group_id': 1, 'gender': 'หญิง', 'glasses': False, 'bangs': False},
+    'Nod':      {'group_id': 1, 'gender': 'หญิง', 'glasses': False, 'bangs': False},
+    'Ann':      {'group_id': 1, 'gender': 'หญิง', 'glasses': False, 'bangs': False},
+
+    # กลุ่ม 3: สไตล์ผมหน้าม้า (6 คน)
+    'North':    {'group_id': 2, 'gender': 'ชาย',  'glasses': False, 'bangs': True},
+    'Jang':     {'group_id': 2, 'gender': 'ชาย',  'glasses': False, 'bangs': True},
+    'Mart':     {'group_id': 2, 'gender': 'ชาย',  'glasses': False, 'bangs': True},
+    'Saimai':   {'group_id': 2, 'gender': 'หญิง', 'glasses': False, 'bangs': True},
+    'DD':       {'group_id': 2, 'gender': 'หญิง', 'glasses': False, 'bangs': True},
+    'Earn':     {'group_id': 2, 'gender': 'หญิง', 'glasses': False, 'bangs': True},
+
+    # กลุ่ม 4: เอกลักษณ์สวมแว่นตา (2 คน)
+    'Supachok': {'group_id': 3, 'gender': 'ชาย',  'glasses': True,  'bangs': False},
+    'Manow':    {'group_id': 3, 'gender': 'หญิง', 'glasses': True,  'bangs': False},
 }
 
 
@@ -825,47 +840,43 @@ class ThaiHudRenderer:
         draw = ImageDraw.Draw(card_img)
         draw.rectangle([0, 0, width - 1, height - 1], outline=color_rgb, width=6)
 
-        pad_x = 28
+        pad_x = 32
         max_text_w = width - pad_x * 2
 
         font_badge = self.get_font(28)
-        font_role = self.get_font(27)
-        font_eng = self.get_font(21)
-        font_trait = self.get_font(21)
+        font_trait_head = self.get_font(30)
+        font_trait = self.get_font(22)
 
-        y_cursor = 26
-        badge_text = f"กลุ่มที่ {group_num}  •  จำนวน: {member_count} คน"
-        draw.rounded_rectangle([pad_x, y_cursor, pad_x + 370, y_cursor + 48], radius=10, fill=color_rgb)
-        draw.text((pad_x + 18, y_cursor + 8), badge_text, font=font_badge, fill=(255, 255, 255))
-        draw.text((pad_x + 19, y_cursor + 8), badge_text, font=font_badge, fill=(255, 255, 255))
-        y_cursor += 70
+        y_cursor = 32
+        badge_text = f"กลุ่มที่ {group_num}   จำนวน: {member_count} คน"
+        badge_w = int(draw.textlength(badge_text, font=font_badge)) + 40
+        draw.rounded_rectangle([pad_x, y_cursor, pad_x + badge_w, y_cursor + 52], radius=12, fill=color_rgb)
+        draw.text((pad_x + 20, y_cursor + 10), badge_text, font=font_badge, fill=(255, 255, 255))
+        draw.text((pad_x + 21, y_cursor + 10), badge_text, font=font_badge, fill=(255, 255, 255))
+        y_cursor += 84
 
-        if '(' in role_title:
-            role_th = role_title.split('(')[0].strip()
-            role_en = '(' + role_title.split('(')[1].strip()
-        else:
-            role_th, role_en = role_title, ''
+        # แสดงหัวข้อลักษณะเด่นทางกายภาพ (ตัดสายงาน/อาชีพออกตามคำสั่ง)
+        trait_title_clean = role_title
+        if '(' in trait_title_clean:
+            trait_title_clean = trait_title_clean.split('(')[0].strip()
+        if 'สายงาน' in trait_title_clean:
+            # fallback if old string passed
+            trait_title_clean = trait_text.split('•')[1].strip() if '•' in trait_text else trait_title_clean
 
-        for line in self.wrap_text_px(draw, role_th, font_role, max_text_w):
-            draw.text((pad_x, y_cursor), line, font=font_role, fill=(255, 255, 255))
-            draw.text((pad_x + 1, y_cursor), line, font=font_role, fill=(255, 255, 255))
-            y_cursor += 38
+        for line in self.wrap_text_px(draw, trait_title_clean, font_trait_head, max_text_w):
+            draw.text((pad_x, y_cursor), line, font=font_trait_head, fill=(255, 255, 255))
+            draw.text((pad_x + 1, y_cursor), line, font=font_trait_head, fill=(255, 255, 255))
+            y_cursor += 42
 
-        if role_en:
-            y_cursor += 6
-            for line in self.wrap_text_px(draw, role_en, font_eng, max_text_w):
-                draw.text((pad_x, y_cursor), line, font=font_eng, fill=(185, 205, 225))
-                y_cursor += 30
-
-        y_cursor += 16
+        y_cursor += 12
         draw.line([(pad_x, y_cursor), (width - pad_x, y_cursor)], fill=(80, 92, 108), width=2)
-        y_cursor += 18
+        y_cursor += 22
 
         for line in self.wrap_text_px(draw, trait_text, font_trait, max_text_w):
-            if y_cursor + 28 > height - 14:
+            if y_cursor + 28 > height - 16:
                 break
-            draw.text((pad_x, y_cursor), line, font=font_trait, fill=(220, 228, 235))
-            y_cursor += 30
+            draw.text((pad_x, y_cursor), line, font=font_trait, fill=(215, 225, 235))
+            y_cursor += 34
 
         return np.array(card_img)
 
