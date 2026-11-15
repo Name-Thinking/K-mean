@@ -293,7 +293,7 @@ def main(show_plot: bool = True):
         member_indices = clusters[k]
         color_hex = '#{:02x}{:02x}{:02x}'.format(*meta['color_rgb'])
 
-        # คอลัมน์ที่ 0: การ์ดข้อความเรนเดอร์ด้วย PIL (ตัดสายงาน/อาชีพออก แสดงเฉพาะกลุ่มและลักษณะกายภาพ)
+        # คอลัมน์ที่ 0: การ์ดข้อความเรนเดอร์ด้วย PIL (แสดงเฉพาะกลุ่มและลักษณะกายภาพ)
         ax_info = fig.add_subplot(gs[k, 0])
         card_img = hud.render_career_card(
             group_num=k + 1,
