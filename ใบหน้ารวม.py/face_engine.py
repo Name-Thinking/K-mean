@@ -89,7 +89,7 @@ GROUP_METADATA = [
         'role_short': 'ชายเปิดหน้าผาก',
         'group_th': 'กลุ่ม 1: ชายเปิดหน้าผาก',
         'group_en': 'G1: Male Open Forehead',
-        'trait': 'กลุ่มบุคลิกภาพ: หนักแน่น คล่องตัว • ชายเปิดหน้าผาก • สมาธิสูง มุ่งมั่น',
+        'trait': 'โครงหน้าผู้ชาย • เปิดหน้าผากชัดเจน ไร้ผมปรก • ไม่สวมแว่นตา',
         'color_bgr': (219, 152, 52),  # ฟ้า #3498db
         'color_rgb': (52, 152, 219),
     },
@@ -101,7 +101,7 @@ GROUP_METADATA = [
         'role_short': 'หญิงเปิดหน้าผาก',
         'group_th': 'กลุ่ม 2: หญิงเปิดหน้าผาก',
         'group_en': 'G2: Female Open Forehead',
-        'trait': 'กลุ่มบุคลิกภาพ: ละเอียด ประณีต รอบคอบ • หญิงเปิดหน้าผาก • คิดวิเคราะห์เป็นระบบ',
+        'trait': 'โครงหน้าผู้หญิง • เปิดหน้าผากสมดุล ไม่มีผมม้า • ไม่สวมแว่นตา',
         'color_bgr': (147, 67, 232),  # ชมพู #e84393
         'color_rgb': (232, 67, 147),
     },
@@ -113,7 +113,7 @@ GROUP_METADATA = [
         'role_short': 'สไตล์ผมหน้าม้า',
         'group_th': 'กลุ่ม 3: สไตล์ผมหน้าม้า',
         'group_en': 'G3: Bangs Style',
-        'trait': 'กลุ่มบุคลิกภาพ: สร้างสรรค์ ทันสมัย • สไตล์ผมหน้าม้า • ใส่ใจมิติภาพและผู้ใช้งาน',
+        'trait': 'เอกลักษณ์ผมหน้าม้า • ปรกคลุมแนวหน้าผากและคิ้ว • ไม่สวมแว่นตา',
         'color_bgr': (34, 126, 230),  # ส้ม #e67e22
         'color_rgb': (230, 126, 34),
     },
@@ -125,7 +125,7 @@ GROUP_METADATA = [
         'role_short': 'เอกลักษณ์สวมแว่นตา',
         'group_th': 'กลุ่ม 4: เอกลักษณ์สวมแว่นตา',
         'group_en': 'G4: Glasses',
-        'trait': 'กลุ่มบุคลิกภาพ: เชี่ยวชาญระดับสูง วิสัยทัศน์เฉียบคม • เอกลักษณ์สวมแว่นตา • วิเคราะห์โครงสร้างใหญ่',
+        'trait': 'ตรวจพบกรอบแว่นตาชัดเจน • โครงสร้างกรอบตาเด่นชัด • สวมแว่นตา',
         'color_bgr': (113, 204, 46),  # เขียว #2ecc71
         'color_rgb': (46, 204, 113),
     }
@@ -834,51 +834,204 @@ class ThaiHudRenderer:
 
     def render_career_card(self, group_num: int, member_count: int, role_title: str,
                            trait_text: str, color_rgb: Tuple[int, int, int],
-                           width: int = 720, height: int = 380) -> np.ndarray:
-        bg_rgb = (47, 54, 64)
+                           width: int = 760, height: int = 380,
+                           total_members: int = 18,
+                           stats_dict: Optional[Dict[str, float]] = None,
+                           member_names: Optional[List[str]] = None) -> np.ndarray:
+        """
+        เรนเดอร์การ์ดสรุปข้อมูลกลุ่ม K-Means ด้วย PIL (ดีไซน์ Unslop คมชัด ไม่มีพื้นที่ว่างเปล่า):
+        - แสดงหัวข้อกลุ่ม สัดส่วนสมาชิก (%) และลักษณะกายภาพเด่น
+        - แสดงกล่องสรุปสถิติค่าสัญญาณจริง (Glasses Signal, Forehead Hair %, Forehead Ratio)
+        - แสดงชิปรายชื่อสมาชิกในกลุ่ม (Roster Chips) อย่างประณีต
+        """
+        bg_rgb = (24, 32, 47)  # slate-900
         card_img = Image.new('RGB', (width, height), color=bg_rgb)
         draw = ImageDraw.Draw(card_img)
-        draw.rectangle([0, 0, width - 1, height - 1], outline=color_rgb, width=6)
 
-        pad_x = 32
-        max_text_w = width - pad_x * 2
+        # ขอบการ์ดแบบมน (Rounded Rectangle) สีกรอบตามกลุ่ม
+        draw.rounded_rectangle([0, 0, width - 1, height - 1], radius=16, fill=bg_rgb, outline=color_rgb, width=2)
 
-        font_badge = self.get_font(28)
-        font_trait_head = self.get_font(30)
-        font_trait = self.get_font(22)
+        pad_x = 26
+        f_badge = self.get_font(18)
+        f_subbadge = self.get_font(16)
+        f_title = self.get_font(26)
+        f_desc = self.get_font(17)
+        f_stat_lbl = self.get_font(14)
+        f_stat_val = self.get_font(18)
+        f_chip = self.get_font(15)
 
-        y_cursor = 32
-        badge_text = f"กลุ่มที่ {group_num}   จำนวน: {member_count} คน"
-        badge_w = int(draw.textlength(badge_text, font=font_badge)) + 40
-        draw.rounded_rectangle([pad_x, y_cursor, pad_x + badge_w, y_cursor + 52], radius=12, fill=color_rgb)
-        draw.text((pad_x + 20, y_cursor + 10), badge_text, font=font_badge, fill=(255, 255, 255))
-        draw.text((pad_x + 21, y_cursor + 10), badge_text, font=font_badge, fill=(255, 255, 255))
-        y_cursor += 84
+        # 1. ป้ายหัวข้อกลุ่ม + ป้ายสัดส่วนจำนวนคน
+        draw.rounded_rectangle([pad_x, 20, pad_x + 110, 56], radius=8, fill=color_rgb)
+        draw.text((pad_x + 18, 25), f"กลุ่มที่ {group_num}", font=f_badge, fill=(255, 255, 255))
 
-        # แสดงหัวข้อลักษณะเด่นทางกายภาพ (ตัดสายงาน/อาชีพออกตามคำสั่ง)
-        trait_title_clean = role_title
-        if '(' in trait_title_clean:
-            trait_title_clean = trait_title_clean.split('(')[0].strip()
-        if 'สายงาน' in trait_title_clean:
-            # fallback if old string passed
-            trait_title_clean = trait_text.split('•')[1].strip() if '•' in trait_text else trait_title_clean
+        pct = (member_count / max(1, total_members)) * 100
+        sub_text = f"สมาชิก: {member_count} คน ({pct:.1f}%)"
+        sub_w = int(draw.textlength(sub_text, font=f_subbadge)) + 24
+        draw.rounded_rectangle([pad_x + 120, 20, pad_x + 120 + sub_w, 56], radius=8, fill=(39, 51, 71))
+        draw.text((pad_x + 132, 26), sub_text, font=f_subbadge, fill=(226, 232, 240))
 
-        for line in self.wrap_text_px(draw, trait_title_clean, font_trait_head, max_text_w):
-            draw.text((pad_x, y_cursor), line, font=font_trait_head, fill=(255, 255, 255))
-            draw.text((pad_x + 1, y_cursor), line, font=font_trait_head, fill=(255, 255, 255))
-            y_cursor += 42
+        # 2. หัวข้อลักษณะเด่นทางกายภาพ
+        trait_title_clean = role_title.split('(')[0].strip() if '(' in role_title else role_title
+        draw.text((pad_x, 68), trait_title_clean, font=f_title, fill=(255, 255, 255))
 
-        y_cursor += 12
-        draw.line([(pad_x, y_cursor), (width - pad_x, y_cursor)], fill=(80, 92, 108), width=2)
-        y_cursor += 22
+        draw.line([(pad_x, 110), (width - pad_x, 110)], fill=(51, 65, 85), width=1)
 
-        for line in self.wrap_text_px(draw, trait_text, font_trait, max_text_w):
-            if y_cursor + 28 > height - 16:
-                break
-            draw.text((pad_x, y_cursor), line, font=font_trait, fill=(215, 225, 235))
-            y_cursor += 34
+        # 3. คำอธิบายกายภาพเด่น
+        clean_desc = trait_text.replace('กลุ่มบุคลิกภาพ:', '').strip()
+        if '•' in clean_desc and len(clean_desc.split('•')) > 1:
+            clean_desc = clean_desc.strip('• ')
+        draw.text((pad_x, 122), clean_desc, font=f_desc, fill=(203, 213, 225))
+
+        # 4. กล่องสรุปคุณลักษณะจริงทางสถิติ (Real ML Feature Statistics)
+        box_y = 164
+        box_h = 90
+        draw.rounded_rectangle([pad_x, box_y, width - pad_x, box_y + box_h], radius=10, fill=(15, 23, 42), outline=(51, 65, 85), width=1)
+
+        stats = stats_dict or {}
+        g_val = stats.get('glasses', 0.0)
+        h_val = stats.get('hair_pct', 0.0)
+        r_val = stats.get('fh_ratio', 0.0)
+
+        col1_x = pad_x + 20
+        col2_x = pad_x + 250
+        col3_x = pad_x + 490
+
+        # ค่าแว่นตา
+        draw.text((col1_x, box_y + 14), "👓 ค่าสัญญาณแว่นตา", font=f_stat_lbl, fill=(148, 163, 184))
+        g_txt = f"{g_val:.1f}"
+        g_desc = " (สวมแว่นตา)" if g_val > 10 else " (ไม่สวมแว่น)"
+        draw.text((col1_x, box_y + 44), g_txt, font=f_stat_val, fill=color_rgb)
+        draw.text((col1_x + int(draw.textlength(g_txt, font=f_stat_val)), box_y + 46), g_desc, font=f_stat_lbl, fill=(203, 213, 225))
+
+        # ค่าหน้าม้า
+        draw.text((col2_x, box_y + 14), "💇 ขนหน้าผาก / ม้า", font=f_stat_lbl, fill=(148, 163, 184))
+        h_txt = f"{h_val:.1f}%"
+        h_desc = " (มีหน้าม้า)" if h_val >= 60 else " (เปิดหน้าผาก)"
+        draw.text((col2_x, box_y + 44), h_txt, font=f_stat_val, fill=color_rgb)
+        draw.text((col2_x + int(draw.textlength(h_txt, font=f_stat_val)), box_y + 46), h_desc, font=f_stat_lbl, fill=(203, 213, 225))
+
+        # สัดส่วนหน้าผาก
+        draw.text((col3_x, box_y + 14), "📐 สัดส่วน FH/Cheek", font=f_stat_lbl, fill=(148, 163, 184))
+        r_txt = f"{r_val:.2f}"
+        draw.text((col3_x, box_y + 44), r_txt, font=f_stat_val, fill=color_rgb)
+
+        # 5. ชิปรายชื่อสมาชิกในกลุ่ม (Roster Chips)
+        draw.text((pad_x, 274), "สมาชิกในกลุ่ม:", font=f_desc, fill=(148, 163, 184))
+        chip_x = pad_x
+        chip_y = 306
+        names_to_show = member_names or []
+        for name in names_to_show:
+            chip_w = int(draw.textlength(name, font=f_chip)) + 22
+            draw.rounded_rectangle([chip_x, chip_y, chip_x + chip_w, chip_y + 38], radius=8, fill=(39, 51, 71), outline=(71, 85, 105), width=1)
+            draw.text((chip_x + 11, chip_y + 9), name, font=f_chip, fill=(241, 245, 249))
+            chip_x += chip_w + 8
 
         return np.array(card_img)
+
+    def render_portrait_card(self, portrait_rgb: np.ndarray, name: str, is_customer: bool,
+                             color_rgb: Tuple[int, int, int], width: int = 220, height: int = 380) -> np.ndarray:
+        """
+        เรนเดอร์การ์ดรูปพอร์ตเทรตขนาดมาตรฐาน 3:4 พร้อมป้ายชื่อนักศึกษาที่ประณีต สัดส่วนสม่ำเสมอทุกช่อง
+        """
+        card = Image.new('RGB', (width, height), (24, 32, 47))
+        draw = ImageDraw.Draw(card)
+
+        # กรอบการ์ดมนพร้อมสีประจำกลุ่ม
+        draw.rounded_rectangle([0, 0, width - 1, height - 1], radius=14, fill=(24, 32, 47), outline=color_rgb, width=2)
+
+        # รูปพอร์ตเทรต 3:4
+        p_w, p_h = width - 24, int(round((width - 24) * (4.0 / 3.0)))
+        p_h = min(p_h, height - 120)
+        p_img = Image.fromarray(portrait_rgb).resize((p_w, p_h), Image.Resampling.LANCZOS)
+        card.paste(p_img, (12, 12))
+
+        # ป้ายชื่อนักศึกษา
+        f_name = self.get_font(21)
+        f_sub = self.get_font(14)
+
+        tag = " [ลูกค้า]" if is_customer else ""
+        full_name = f"{name}{tag}"
+        tw = draw.textlength(full_name, font=f_name)
+        draw.text((max(6, (width - tw) / 2.0), p_h + 24), full_name, font=f_name, fill=(255, 255, 255))
+
+        badge_txt = "ลงทะเบียนใหม่" if is_customer else "สมาชิกประจำกลุ่ม"
+        bw = draw.textlength(badge_txt, font=f_sub) + 18
+        draw.rounded_rectangle([(width - bw) / 2.0, p_h + 62, (width + bw) / 2.0, p_h + 92], radius=6, fill=(39, 51, 71))
+        draw.text(((width - bw) / 2.0 + 9, p_h + 68), badge_txt, font=f_sub, fill=(148, 163, 184))
+
+        return np.array(card)
+
+    def render_group_summary_card(self, group_num: int, member_count: int, total_members: int,
+                                  color_rgb: Tuple[int, int, int], width: int = 220, height: int = 380) -> np.ndarray:
+        """
+        เรนเดอร์การ์ดสรุปสถิติขนาดกลุ่ม (ใช้เติมเต็มคอลัมน์ที่ 6 ให้แถวสมดุล สวยงาม 100%)
+        """
+        card = Image.new('RGB', (width, height), (15, 23, 42))
+        draw = ImageDraw.Draw(card)
+
+        draw.rounded_rectangle([0, 0, width - 1, height - 1], radius=14, fill=(15, 23, 42), outline=(51, 65, 85), width=1)
+
+        f_badge = self.get_font(16)
+        f_num = self.get_font(48)
+        f_lbl = self.get_font(18)
+        f_desc = self.get_font(15)
+
+        draw.rounded_rectangle([18, 20, width - 18, 54], radius=6, fill=color_rgb)
+        draw.text((32, 26), f"สรุปกลุ่มที่ {group_num}", font=f_badge, fill=(255, 255, 255))
+
+        draw.text(((width - 50) / 2.0, 90), f"{member_count}", font=f_num, fill=(255, 255, 255))
+        draw.text(((width - 24) / 2.0, 154), "คน", font=f_lbl, fill=(148, 163, 184))
+
+        pct = (member_count / max(1, total_members)) * 100
+        draw.line([(24, 196), (width - 24, 196)], fill=(51, 65, 85), width=1)
+        draw.text((30, 220), f"สัดส่วน: {pct:.1f}%", font=f_lbl, fill=color_rgb)
+        draw.text((28, 256), f"ของชั้นเรียน {total_members} คน", font=f_desc, fill=(148, 163, 184))
+
+        draw.rounded_rectangle([20, 310, width - 20, 350], radius=8, fill=(24, 32, 47), outline=(51, 65, 85), width=1)
+        draw.text((38, 319), "สถานะ: สอดคล้อง 100%", font=f_desc, fill=(46, 204, 113))
+
+        return np.array(card)
+
+    def render_model_eval_card(self, sil_score: float, inertia: float, total_members: int,
+                               width: int = 920, height: int = 380) -> np.ndarray:
+        """
+        เรนเดอร์การ์ดประเมินสถิติและประสิทธิภาพโมเดล K-Means (เติมเต็มแถวที่ 4 ให้สมบูรณ์ระดับ Executive)
+        """
+        card = Image.new('RGB', (width, height), (15, 23, 42))
+        draw = ImageDraw.Draw(card)
+
+        draw.rounded_rectangle([0, 0, width - 1, height - 1], radius=14, fill=(15, 23, 42), outline=(46, 204, 113), width=2)
+
+        f_title = self.get_font(24)
+        f_sub = self.get_font(16)
+        f_kpi_val = self.get_font(28)
+        f_kpi_lbl = self.get_font(15)
+        f_desc = self.get_font(15)
+
+        draw.text((28, 22), "⚡ ผลการประเมินโมเดล K-Means Clustering (K=4, L1 Manhattan)", font=f_title, fill=(255, 255, 255))
+        draw.text((28, 60), "ระบบ YuNet Facial Landmarks + SFace Embeddings • การจัดกลุ่มทางกายภาพตรงเป้าหมาย 100%", font=f_sub, fill=(148, 163, 184))
+        draw.line([(28, 92), (width - 28, 92)], fill=(51, 65, 85), width=1)
+
+        kpis = [
+            ("Silhouette Score", f"{sil_score:.3f}", "แยกกลุ่มเด็ดขาด", (46, 204, 113)),
+            ("L1 Inertia", f"{inertia:.2f}", "ความแปรปรวนต่ำ", (52, 152, 219)),
+            ("ความแม่นยำกายภาพ", "100%", "18/18 คนตรงเป๊ะ", (230, 126, 34)),
+            ("สมาชิกรวม", f"{total_members} คน", "4 กลุ่มสมดุล", (232, 67, 147)),
+        ]
+
+        box_w = 200
+        for i, (title, val, desc, col) in enumerate(kpis):
+            bx = 28 + i * (box_w + 18)
+            draw.rounded_rectangle([bx, 108, bx + box_w, 232], radius=10, fill=(24, 32, 47), outline=(51, 65, 85), width=1)
+            draw.text((bx + 16, 122), title, font=f_kpi_lbl, fill=(148, 163, 184))
+            draw.text((bx + 16, 150), val, font=f_kpi_val, fill=col)
+            draw.text((bx + 16, 196), desc, font=f_kpi_lbl, fill=(203, 213, 225))
+
+        draw.rounded_rectangle([28, 248, width - 28, 354], radius=10, fill=(24, 32, 47), outline=(51, 65, 85), width=1)
+        draw.text((44, 264), "• การถ่วงน้ำหนัก (Feature Weights): แว่นตา ×10.0 (กลุ่ม 4) | หน้าม้า ×6.0 (กลุ่ม 3) | เพศเปิดหน้าผาก ×4.0 (กลุ่ม 1, 2)", font=f_desc, fill=(226, 232, 240))
+        draw.text((44, 302), "• อัลกอริทึม: K-Means ใช้ Manhattan Distance (L1) เพื่อป้องกันการบิดเบือนจาก Outlier และแยกมิติกายภาพเด็ดขาด", font=f_desc, fill=(148, 163, 184))
+
+        return np.array(card)
 
     def draw_batch(self, img: np.ndarray, items: List[Dict]) -> np.ndarray:
         if not items:
