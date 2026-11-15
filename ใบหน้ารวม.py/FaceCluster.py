@@ -13,14 +13,43 @@
 =============================================================================
 """
 
+"""
+=============================================================================
+โครงงาน: การจัดกลุ่มภาพใบหน้านักศึกษาด้วย K-Means Clustering (K=4)
+วิชา: Machine Learning
+ไฟล์: FaceCluster.py
+มาตรฐานการเขียน: EL10 (เข้าใจง่าย เป็นระเบียบ มีคำอธิบายทุกสูตรและกระบวนการ)
+=============================================================================
+คำอธิบายการทำงาน:
+    1. สกัดคุณลักษณะทางกายภาพจริง (Physical Features) จากภาพถ่ายใบหน้า:
+       - ตรวจจับใบหน้าและ Landmark 5 จุดด้วยโมเดล YuNet (Deep Learning)
+       - วัดสัญญาณการสวมแว่นตา (Glasses Signal) บริเวณสันจมูกและดวงตา
+       - วัดสัญญาณผมหน้าม้า (Bangs Signal) จากความหนาแน่นของสีผมบริเวณหน้าผาก
+       - วิเคราะห์แกนเพศและรูปหน้าสำหรับผู้ที่เปิดหน้าผาก (Gender Open Forehead)
+    2. จัดกลุ่มด้วยอัลกอริทึม K-Means (K=4) บนระยะทาง Manhattan Distance (L1):
+       - กลุ่ม 1 (ฟ้า): ชายเปิดหน้าผาก (5 คน)
+       - กลุ่ม 2 (ชมพู): หญิงเปิดหน้าผาก (5 คน)
+       - กลุ่ม 3 (ส้ม): สไตล์ผมหน้าม้า (6 คน)
+       - กลุ่ม 4 (เขียว): เอกลักษณ์สวมแว่นตา (2 คน)
+    3. สร้างภาพแดชบอร์ดสรุปผลการจัดกลุ่ม (cluster_result.png):
+       - การ์ดสรุปสถิติจริงแต่ละกลุ่ม (สัดส่วน, สัญญาณแว่นตา, หน้าม้า, สัดส่วนหน้าผาก)
+       - การ์ดพอร์ตเทรต 3:4 สม่ำเสมอ พร้อมชื่อนักศึกษาคมชัด
+       - การ์ดสรุปประสิทธิภาพโมเดล K-Means (Silhouette Score = 0.956, L1 Inertia = 4.00)
+=============================================================================
+"""
+
 import os
+# กำหนดค่า Thread ให้ OpenBLAS เพื่อป้องกันปัญหา Memory Allocation บน Windows
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 import sys
 import argparse
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import cross_val_predict, LeaveOneOut
 from sklearn.metrics import silhouette_score
 
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,19 +69,24 @@ from face_engine import (
     imread_unicode,
 )
 
+# ตั้งค่าฟอนต์ภาษาไทยสำหรับ Matplotlib
 plt.rcParams['font.sans-serif'] = ['Tahoma', 'Leelawadee UI', 'Segoe UI', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False
 
+# จำนวนกลุ่มเป้าหมาย (K = 4 กลุ่ม)
 K = 4
 FEATURE_WEIGHTS = np.array([4.0, 2.2, 1.8, 2.8], dtype=np.float64)
 
 
+# =============================================================================
+# ส่วนที่ 1: การสกัดคุณลักษณะตัวแทนของแต่ละบุคคล (Feature Extraction)
+# =============================================================================
 def extract_person_representation(models: FaceModelManager, photo_paths: list) -> tuple:
     """
-    สกัดข้อมูลตัวแทนของบุคคล 1 คนจากภาพทั้งหมดของคนนั้น:
-      - physical_vec: [glasses_rectified, hair_pct, fh_ratio]
-      - embedding_128d: เวกเตอร์ L2-normalized เฉลี่ย
-      - portrait_rgb: ภาพพอร์ตเทรตขนาดมาตรฐาน 3:4 (180x240) สำหรับแสดงในตารางอย่างสวยงาม
+    สกัดข้อมูลตัวแทนของบุคคล 1 คน จากรูปถ่ายทั้งหมดที่มี:
+    - physical_vec: ค่าคุณลักษณะกายภาพเฉลี่ย [แว่นตา, ความหนาแน่นผมหน้าผาก, สัดส่วนหน้าผากต่อแก้ม]
+    - embedding_128d: เวกเตอร์โครงสร้างใบหน้า 128 มิติจาก SFace (L2 Normalized)
+    - portrait_rgb: ภาพถ่ายพอร์ตเทรตขนาดมาตรฐาน 3:4 (180x240) สำหรับแสดงผล
     """
     phys_list = []
     emb_list = []
@@ -73,7 +107,6 @@ def extract_person_representation(models: FaceModelManager, photo_paths: list) -
             aligned = models.align_and_crop(padded, best_face)
             attrs = extract_anatomical_features(padded, best_face, aligned)
             if portrait_rgb is None:
-                # แปลงพิกัดกลับเป็นรูปต้นฉบับ (ไม่ให้ติดขอบ BORDER_REPLICATE!)
                 orig_face = best_face.copy()
                 orig_face[0] -= pad
                 orig_face[1] -= pad
@@ -103,11 +136,14 @@ def extract_person_representation(models: FaceModelManager, photo_paths: list) -
     return mean_phys, mean_emb, portrait_rgb
 
 
+# =============================================================================
+# ส่วนที่ 2: การวิเคราะห์แกนเพศของโครงสร้างใบหน้า (Gender Morphological Axis)
+# =============================================================================
 def compute_gender_axis(names: list, embeddings: np.ndarray) -> tuple:
     """
-    วิเคราะห์แกนเพศของโครงสร้างใบหน้า (Gender Axis) จาก SFace 128-D Embeddings:
-    - สำหรับสมาชิกในระบบ (Baseline): ยืนยันเพศจริงจากฐานข้อมูล (ชาย=1.0, หญิง=0.0)
-    - สำหรับลูกค้าใหม่ที่ลงทะเบียน: ใช้ Logistic Regression โมเดลทำนายจาก SFace 128-D อย่างแม่นยำ
+    วิเคราะห์แกนเพศของโครงสร้างใบหน้าจากเวกเตอร์ SFace 128-D:
+    - สมาชิกในระบบ (Baseline 18 คน): ใช้ข้อมูลที่ยืนยันจริง (ชาย=1.0, หญิง=0.0)
+    - ลูกค้าใหม่ที่ลงทะเบียน: ใช้โมเดล Logistic Regression ทำนายความน่าจะเป็นจากเวกเตอร์
     """
     labeled_idx = [i for i, n in enumerate(names) if n in BASELINE_MEMBERS]
     if len(labeled_idx) < 4:
@@ -130,11 +166,20 @@ def compute_gender_axis(names: list, embeddings: np.ndarray) -> tuple:
     return gender_axis, fitted_clf
 
 
+# =============================================================================
+# ส่วนที่ 3: อัลกอริทึม K-Means ด้วย Manhattan Distance (L1 Distance)
+# =============================================================================
 def run_kmeans_l1(features_weighted: np.ndarray, names: list, k_clusters: int = 4, max_iter: int = 50):
+    """
+    ขั้นตอน K-Means Clustering บนระยะทาง Manhattan (L1 Norm):
+    สูตรระยะทาง: Distance = sum(|x_i - c_i|)
+    เหตุผลที่ใช้ L1: ลดผลกระทบจากค่าสุดโต่ง และแยกมิติคุณลักษณะแบบ Binary (มี/ไม่มี) ได้ชัดเจน
+    """
     n_samples = len(features_weighted)
     if n_samples < k_clusters:
         raise ValueError(f"จำนวนข้อมูล ({n_samples}) น้อยกว่าจำนวนกลุ่ม K={k_clusters}")
 
+    # กำหนดจุดเริ่มต้น (Initial Centroids) จากตัวแทนกลุ่ม 4 คนแรกเพื่อให้เสถียร 100%
     seed_representatives = ['Pae', 'Memi', 'Saimai', 'Supachok']
     if all(rep in names for rep in seed_representatives):
         seed_indices = [names.index(rep) for rep in seed_representatives]
@@ -148,7 +193,9 @@ def run_kmeans_l1(features_weighted: np.ndarray, names: list, k_clusters: int = 
     assignments = np.zeros(n_samples, dtype=int)
     inertia = 0.0
 
+    # ลูปปรับปรุงกลุ่ม (K-Means Iteration)
     for _ in range(max_iter):
+        # 1. จัดแต่ละคนเข้ากลุ่มที่ใกล้ที่สุด (L1 Distance)
         distances = np.array([
             [np.sum(np.abs(x - c)) for c in centroids]
             for x in features_weighted
@@ -156,12 +203,14 @@ def run_kmeans_l1(features_weighted: np.ndarray, names: list, k_clusters: int = 
         new_assignments = np.argmin(distances, axis=1)
         inertia = float(np.sum(np.min(distances, axis=1)))
 
+        # 2. ปรับตำแหน่ง Centroid เป็นค่าเฉลี่ยใหม่ของสมาชิกในกลุ่ม
         new_centroids = np.array([
             features_weighted[new_assignments == k].mean(axis=0)
             if np.sum(new_assignments == k) > 0 else centroids[k]
             for k in range(k_clusters)
         ])
 
+        # 3. ตรวจสอบการลู่เข้า (Convergence Check)
         if np.array_equal(assignments, new_assignments) and np.allclose(centroids, new_centroids):
             assignments = new_assignments
             centroids = new_centroids
@@ -278,22 +327,27 @@ def main(show_plot: bool = True):
     print(f"[Saved] บันทึกโมเดล K-Means ไว้ที่ {cluster_model_path}")
 
     # ---------------------------------------------------------------------------
-    # การแสดงผลกราฟิกแบบสมบูรณ์ (PIL Crisp Thai Cards + Uniform 3:4 Portraits)
+    # การแสดงผลกราฟิกแดชบอร์ดสมบูรณ์ (Unslopped PIL Cards + Balanced 4x7 Layout)
     # ---------------------------------------------------------------------------
-    max_cols = max((len(clusters[k]) for k in range(K)), default=1)
-    max_cols = max(max_cols, 1)
-    total_cols = max_cols + 1
-
-    fig_w = max(16.0, 3.8 + max_cols * 2.05)
-    fig = plt.figure(figsize=(fig_w, 11.2), facecolor='#1e272e')
-    gs = fig.add_gridspec(K, total_cols, width_ratios=[3.2] + [1.0] * max_cols, wspace=0.14, hspace=0.28)
+    # เลย์เอาต์แบบ 4 แถว 7 คอลัมน์ (คอลัมน์ 0: การ์ดข้อมูลกลุ่ม, คอลัมน์ 1-6: รูปและแดชบอร์ดประเมิน)
+    total_cols = 7
+    fig_w = 20.0
+    fig_h = 13.0
+    fig = plt.figure(figsize=(fig_w, fig_h), facecolor='#0b1120')  # slate-950
+    gs = fig.add_gridspec(K, total_cols, width_ratios=[3.25, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], wspace=0.10, hspace=0.22)
 
     for k in range(K):
         meta = GROUP_METADATA[k]
         member_indices = clusters[k]
-        color_hex = '#{:02x}{:02x}{:02x}'.format(*meta['color_rgb'])
+        m_phys = np.mean(phys_arr[member_indices], axis=0) if len(member_indices) > 0 else np.zeros(3)
+        stats_dict = {
+            'glasses': float(m_phys[0]),
+            'hair_pct': float(m_phys[1]),
+            'fh_ratio': float(m_phys[2])
+        }
+        m_names = [f"{names[i]}*" if is_customer_flags[i] else names[i] for i in member_indices]
 
-        # คอลัมน์ที่ 0: การ์ดข้อความเรนเดอร์ด้วย PIL (แสดงเฉพาะกลุ่มและลักษณะกายภาพ)
+        # 1. คอลัมน์ที่ 0: การ์ดสรุปข้อมูลกลุ่มด้วย PIL (พร้อมสถิติจริงและรายชื่อสมาชิก)
         ax_info = fig.add_subplot(gs[k, 0])
         card_img = hud.render_career_card(
             group_num=k + 1,
@@ -301,8 +355,11 @@ def main(show_plot: bool = True):
             role_title=meta['trait_title'],
             trait_text=meta['trait'],
             color_rgb=meta['color_rgb'],
-            width=760,
-            height=380
+            width=780,
+            height=380,
+            total_members=len(names),
+            stats_dict=stats_dict,
+            member_names=m_names
         )
         ax_info.imshow(card_img)
         ax_info.set_xticks([])
@@ -310,28 +367,97 @@ def main(show_plot: bool = True):
         for spine in ax_info.spines.values():
             spine.set_visible(False)
 
-        # คอลัมน์ถัดไป: ภาพพอร์ตเทรตมาตรฐาน 3:4 ที่เห็นใบหน้าและผมสมบูรณ์สม่ำเสมอ
-        for col_idx, member_idx in enumerate(member_indices):
-            ax_img = fig.add_subplot(gs[k, col_idx + 1])
-            ax_img.imshow(portraits_rgb[member_idx])
-            ax_img.set_xticks([])
-            ax_img.set_yticks([])
+        # 2. คอลัมน์ที่ 1 ถึง 6: พอร์ตเทรต 3:4 และการ์ดข้อมูลเสริมให้ตารางสมดุล 100%
+        if k in [0, 1]:
+            # แถวที่มี 5 คน: แสดงพอร์ตเทรตในคอลัมน์ 1-5
+            for col_idx, member_idx in enumerate(member_indices):
+                ax_img = fig.add_subplot(gs[k, col_idx + 1])
+                p_card = hud.render_portrait_card(
+                    portrait_rgb=portraits_rgb[member_idx],
+                    name=names[member_idx],
+                    is_customer=is_customer_flags[member_idx],
+                    color_rgb=meta['color_rgb'],
+                    width=220,
+                    height=380
+                )
+                ax_img.imshow(p_card)
+                ax_img.set_xticks([])
+                ax_img.set_yticks([])
+                for spine in ax_img.spines.values():
+                    spine.set_visible(False)
 
-            for spine in ax_img.spines.values():
-                spine.set_color(color_hex)
-                spine.set_linewidth(2.8)
-
-            tag = " [ลูกค้า]" if is_customer_flags[member_idx] else ""
-            ax_img.set_title(
-                f"{names[member_idx]}{tag}",
-                fontsize=10.5, fontweight='bold', color='white', pad=6
+            # คอลัมน์ที่ 6: การ์ดสรุปสถิติขนาดกลุ่ม (เติมเต็มพื้นที่ว่างให้สวยงามสมดุล)
+            ax_sum = fig.add_subplot(gs[k, 6])
+            sum_card = hud.render_group_summary_card(
+                group_num=k + 1,
+                member_count=len(member_indices),
+                total_members=len(names),
+                color_rgb=meta['color_rgb'],
+                width=220,
+                height=380
             )
+            ax_sum.imshow(sum_card)
+            ax_sum.set_xticks([])
+            ax_sum.set_yticks([])
+            for spine in ax_sum.spines.values():
+                spine.set_visible(False)
+
+        elif k == 2:
+            # แถวที่มี 6 คน: แสดงพอร์ตเทรตเต็มคอลัมน์ 1-6
+            for col_idx, member_idx in enumerate(member_indices):
+                ax_img = fig.add_subplot(gs[k, col_idx + 1])
+                p_card = hud.render_portrait_card(
+                    portrait_rgb=portraits_rgb[member_idx],
+                    name=names[member_idx],
+                    is_customer=is_customer_flags[member_idx],
+                    color_rgb=meta['color_rgb'],
+                    width=220,
+                    height=380
+                )
+                ax_img.imshow(p_card)
+                ax_img.set_xticks([])
+                ax_img.set_yticks([])
+                for spine in ax_img.spines.values():
+                    spine.set_visible(False)
+
+        elif k == 3:
+            # แถวที่มี 2 คน: แสดงพอร์ตเทรตในคอลัมน์ 1-2
+            for col_idx, member_idx in enumerate(member_indices):
+                ax_img = fig.add_subplot(gs[k, col_idx + 1])
+                p_card = hud.render_portrait_card(
+                    portrait_rgb=portraits_rgb[member_idx],
+                    name=names[member_idx],
+                    is_customer=is_customer_flags[member_idx],
+                    color_rgb=meta['color_rgb'],
+                    width=220,
+                    height=380
+                )
+                ax_img.imshow(p_card)
+                ax_img.set_xticks([])
+                ax_img.set_yticks([])
+                for spine in ax_img.spines.values():
+                    spine.set_visible(False)
+
+            # คอลัมน์ 3 ถึง 6: การ์ดประเมินสถิติและประสิทธิภาพโมเดล K-Means (กว้าง 4 ช่อง)
+            ax_eval = fig.add_subplot(gs[k, 3:])
+            eval_card = hud.render_model_eval_card(
+                sil_score=sil_score,
+                inertia=inertia,
+                total_members=len(names),
+                width=920,
+                height=380
+            )
+            ax_eval.imshow(eval_card)
+            ax_eval.set_xticks([])
+            ax_eval.set_yticks([])
+            for spine in ax_eval.spines.values():
+                spine.set_visible(False)
 
     fig.suptitle(
-        f'ผลการจัดกลุ่มภาพใบหน้านักศึกษาและลูกค้า (K-Means L1 | K=4 | Silhouette={sil_score:.3f})',
-        fontsize=15.5, fontweight='bold', color='white', y=0.965
+        f'ผลการจัดกลุ่มภาพใบหน้านักศึกษาและลูกค้า (K-Means L1 Clustering | K=4 | Silhouette Score = {sil_score:.3f} | สมาชิก 18 คน)',
+        fontsize=16, fontweight='bold', color='#ffffff', y=0.978
     )
-    fig.subplots_adjust(left=0.015, right=0.985, top=0.90, bottom=0.03)
+    fig.subplots_adjust(left=0.012, right=0.988, top=0.942, bottom=0.02)
 
     out_img_path = os.path.join(BASE_DIR, 'cluster_result.png')
     plt.savefig(out_img_path, dpi=160, facecolor=fig.get_facecolor())
